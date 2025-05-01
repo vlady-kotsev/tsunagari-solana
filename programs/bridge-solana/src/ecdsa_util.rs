@@ -65,7 +65,9 @@ pub fn verify_signatures(
     validate_against_duplicates(&signatures)?;
 
     // check if signatures are correct
-    validate_signature(members_keyes, message, signatures[0])?;
+    for signature in signatures {
+        validate_signature(members_keyes, message, signature)?;
+    }
 
     Ok(())
 }

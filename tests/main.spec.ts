@@ -63,16 +63,18 @@ describe("bridge_solana_tests", () => {
 
   test("set_threshold", async () => {
     const bridgeConfigPDA = pdaDeriver.bridge_config();
-    const privateKey = getPrivateKey();
+    const privateKey1 = getPrivateKey(1);
+    const privateKey2 = getPrivateKey(2);
 
     const message = randomBytes(32);
-    const signature = await signMessage(message, privateKey);
+    const signature1 = await signMessage(message, privateKey1);
+    const signature2 = await signMessage(message, privateKey2);
 
     await bridgeProgram.methods
       .setThreshold({
         threshold: 2,
         message: message,
-        signatures: [signature],
+        signatures: [signature1, signature2],
       })
       .accounts({
         payer: authority.publicKey,
