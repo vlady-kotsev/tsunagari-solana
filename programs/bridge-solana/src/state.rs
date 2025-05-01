@@ -6,13 +6,14 @@ use crate::MAX_MEMBERS;
 #[derive(InitSpace)]
 pub struct BridgeConfig {
     #[max_len(MAX_MEMBERS)]
-    pub members: Vec<Pubkey>,
+    pub members: Vec<[u8; 20]>,
     pub threshold: u8,
-    pub bum: u8,
+    pub is_initialized: bool,
+    pub bump: u8,
 }
 
 impl BridgeConfig {
-    pub const SEED: &[u8; 10] = b"BridgeConf";
+    pub const SEED: &'static [u8; 10] = b"BridgeConf";
 
     pub const SIZE: usize = BridgeConfig::INIT_SPACE + 8;
 }

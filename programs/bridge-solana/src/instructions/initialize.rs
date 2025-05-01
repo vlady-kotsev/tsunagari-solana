@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::BridgeConfig;
+use crate::{error::BridgeError, BridgeConfig};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -18,10 +18,27 @@ pub struct Initialize<'info> {
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct InitializeParams {
-    pub members: Vec<Vec<u8>>,
+    pub members: Vec<[u8; 20]>,
     pub threshold: u8,
 }
 
 pub fn initialize(ctx: &mut Context<Initialize>, params: &InitializeParams) -> Result<()> {
+    let bridge_config = &mut ctx.accounts.bridge_config;
+    require!(
+        !bridge_config.is_initialized,
+        BridgeError::AlreadyInitialized
+    );
+    require!(params.members.len() > 0, BridgeError::InvalidMembersCount);
+    require!(
+        params.threshold > 0 && params.threshold <= params.members.len() as u8,
+        BridgeError::InvalidThreshold
+    );
+
+    bridge_config.bump = ctx.bumps.bridge_config;
+    bridge_config.threshold = params.threshold;
+    for member in &params.members {
+        bridge_config.members.push(*member);
+    }
+
     Ok(())
 }

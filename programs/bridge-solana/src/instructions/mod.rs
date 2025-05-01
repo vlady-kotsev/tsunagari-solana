@@ -1,9 +1,10 @@
 pub mod initialize;
-pub mod set_member;
-pub mod set_threshold;
 pub mod mint;
-
-pub use mint::*;
+pub mod set_member;
+pub mod supported_token;
+pub mod set_threshold;
 pub use initialize::*;
+pub use mint::*;
 pub use set_member::*;
+pub use supported_token::*;
 pub use set_threshold::*;
