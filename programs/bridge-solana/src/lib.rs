@@ -28,13 +28,19 @@ pub mod bridge_solana {
         instructions::set_threshold(&mut ctx, params)
     }
 
-    // // add new supproted token
-    // pub fn add_supported_token(
-    //     ctx: Context<AddSupportedToken>,
-    //     params: AddSupportedTokenParams,
-    // ) -> Result<()> {
-    //     instructions::add_supported_token(&ctx, params)
-    // }
+    pub fn add_supported_token(
+        mut ctx: Context<AddSupportedToken>,
+        params: AddSupportedTokenParams,
+    ) -> Result<()> {
+        instructions::add_supported_token(&mut ctx, &params)
+    }
+
+    pub fn remove_supported_token(
+        ctx: Context<RemoveSupportedToken>,
+        params: RemoveSupportedTokenParams,
+    ) -> Result<()> {
+        instructions::remove_supported_token(&ctx, &params)
+    }
     // mintWrapped
 
     // burnWrapped

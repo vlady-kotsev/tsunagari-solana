@@ -28,4 +28,6 @@ pub enum BridgeError {
     NotEnoughSignatures,
     #[msg("Signatures not unique")]
     NotUniqueSignatures,
+    #[msg("Invalid token symbol length")]
+    InvalidTokenSymbolLength,
 }

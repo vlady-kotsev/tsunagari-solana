@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::MAX_MEMBERS;
+use crate::{MAX_MEMBERS, MAX_TOKEN_SYMBOL_LENGTH};
 
 #[account]
 #[derive(InitSpace)]
@@ -14,6 +14,20 @@ pub struct BridgeConfig {
 
 impl BridgeConfig {
     pub const SEED: &'static [u8; 10] = b"BridgeConf";
-
     pub const SIZE: usize = BridgeConfig::INIT_SPACE + 8;
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct TokenDetails {
+    #[max_len(MAX_TOKEN_SYMBOL_LENGTH)]
+    pub symbol: String,
+    pub decimals: u8,
+    pub mint: Pubkey,
+    pub min_amount: u64,
+}
+
+impl TokenDetails {
+    pub const SEED: &'static [u8; 10] = b"TokDetails";
+    pub const SIZE: usize = TokenDetails::INIT_SPACE + 8;
 }

@@ -39,6 +39,7 @@ pub fn initialize(ctx: &mut Context<Initialize>, params: &InitializeParams) -> R
     for member in &params.members {
         bridge_config.members.push(*member);
     }
+    bridge_config.is_initialized = true;
 
     Ok(())
 }
