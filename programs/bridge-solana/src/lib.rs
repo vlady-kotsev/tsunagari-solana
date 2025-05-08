@@ -46,7 +46,10 @@ pub mod bridge_solana {
     pub fn mint_wrapped(ctx: Context<MintWrapped>, params: MintWrappedParams) -> Result<()> {
         instructions::mint_wrapped(&ctx, &params)
     }
-    // burnWrapped
+
+    pub fn burn_wrapped(ctx: Context<BurnWrapped>, params: BurnWrappedParams) -> Result<()> {
+        instructions::burn_wrapped(&ctx, &params)
+    }
 
     // lockNative
 

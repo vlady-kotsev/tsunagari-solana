@@ -1,11 +1,13 @@
+pub mod burn;
 pub mod initialize;
 pub mod mint;
 pub mod set_member;
-pub mod supported_token;
 pub mod set_threshold;
+pub mod supported_token;
 mod utils;
+pub use burn::*;
 pub use initialize::*;
 pub use mint::*;
 pub use set_member::*;
-pub use supported_token::*;
 pub use set_threshold::*;
+pub use supported_token::*;

@@ -39,14 +39,14 @@ describe("bridge_solana_tests", () => {
   let authority: Keypair;
   let context: ProgramTestContext;
   let provider: BankrunProvider;
-  let tokenA: Keypair;
+  let nativeTokenMint: PublicKey;
+  let wrappedTokenMint: PublicKey;
 
   beforeAll(async () => {
     context = await contextPromise;
     authority = await loadKeypair();
     provider = new BankrunProvider(context, new Wallet(authority));
     bridgeProgram = new Program<BridgeSolana>(BRIDGE_IDL as any, provider);
-    tokenA = await loadKeypair("./tests/tokenA.json");
   });
 
   test("initialize", async () => {
@@ -170,24 +170,23 @@ describe("bridge_solana_tests", () => {
   });
 
   test("add_supported_tokens", async () => {
-    const mint = await createMint(
+    nativeTokenMint = await createMint(
       context.banksClient,
       authority,
       authority.publicKey,
       null,
-      3,
-      tokenA
+      3
     );
 
     const splVaultPDA = pdaDeriver.splVault();
 
     const splVaultAtaPDA = await getAssociatedTokenAddress(
-      mint,
+      nativeTokenMint,
       splVaultPDA,
       true
     );
 
-    const tokenDetailsPDA = pdaDeriver.tokenDetails(tokenA.publicKey);
+    const tokenDetailsPDA = pdaDeriver.tokenDetails(nativeTokenMint);
     const bridgeConfigPDA = pdaDeriver.bridgeConfig();
 
     const privateKey1 = getPrivateKey(1);
@@ -196,7 +195,7 @@ describe("bridge_solana_tests", () => {
 
     await bridgeProgram.methods
       .addSupportedToken({
-        tokenMint: mint,
+        tokenMint: nativeTokenMint,
         symbol: "TokenA",
         minAmount: new BN(1),
         message: message,
@@ -204,7 +203,7 @@ describe("bridge_solana_tests", () => {
       })
       .accounts({
         payer: authority.publicKey,
-        tokenMint: mint,
+        tokenMint: nativeTokenMint,
         //@ts-ignore
         splVault: splVaultPDA,
         bridgeAta: splVaultAtaPDA,
@@ -232,7 +231,7 @@ describe("bridge_solana_tests", () => {
 
     const splVaultPDA = pdaDeriver.splVault();
 
-    const mint = await createMint(
+    wrappedTokenMint = await createMint(
       context.banksClient,
       authority,
       splVaultPDA,
@@ -243,7 +242,7 @@ describe("bridge_solana_tests", () => {
     const receiverATA = await createAssociatedTokenAccount(
       context.banksClient,
       authority,
-      mint,
+      wrappedTokenMint,
       authority.publicKey
     );
 
@@ -253,14 +252,14 @@ describe("bridge_solana_tests", () => {
       .mintWrapped({
         amount: new BN(1000), // 1 token with 3 decimals
         to: authority.publicKey,
-        wrappedTokenAddress: mint,
+        wrappedTokenAddress: wrappedTokenMint,
         message,
         signatures: [signature1],
       })
       .accounts({
         payer: authority.publicKey,
         receiver: authority.publicKey,
-        mint: mint,
+        mint: wrappedTokenMint,
         //@ts-ignore
         receiverAta: receiverATA,
         splVault: splVaultPDA,
@@ -276,5 +275,32 @@ describe("bridge_solana_tests", () => {
     expect(ataAccount).not.toBeNull();
 
     expect(Number(AccountLayout.decode(ataAccount!.data).amount)).toBe(1000);
+  });
+
+  test("burn", async () => {
+    const receiverATA = await getAssociatedTokenAddress(
+      wrappedTokenMint,
+      authority.publicKey
+    );
+
+    await bridgeProgram.methods
+      .burnWrapped({
+        amount: new BN(500), // 0.5 token with 3 decimals
+        wrappedTokenAddress: wrappedTokenMint,
+      })
+      .accounts({
+        payer: authority.publicKey,
+        mint: wrappedTokenMint,
+        from: receiverATA,
+        //@ts-ignore
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([authority])
+      .rpc();
+
+    const ataAccount = await context.banksClient.getAccount(receiverATA);
+    expect(ataAccount).not.toBeNull();
+
+    expect(Number(AccountLayout.decode(ataAccount!.data).amount)).toBe(500);
   });
 });
