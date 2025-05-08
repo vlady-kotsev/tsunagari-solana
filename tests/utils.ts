@@ -3,9 +3,9 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 import * as fs from "fs";
 import { ethers } from "ethers";
 
-const keyPath = process.env.WALLET_PATH || "./tests/wallet.json";
-
-export const loadKeypair = async (): Promise<Keypair> => {
+export const loadKeypair = async (
+  keyPath: string = "./tests/wallet.json"
+): Promise<Keypair> => {
   if (!fs.existsSync(keyPath)) {
     throw new Error("Wallet file does not exist");
   }
@@ -20,7 +20,7 @@ export async function signMessage(message: Uint8Array, privateKey: string) {
   const messageHash = ethers.keccak256(message).slice(2);
   const signature = secp256k1.sign(messageHash, privateKey);
   const signatureBytes = Buffer.concat([
-    signature.toCompactRawBytes(), 
+    signature.toCompactRawBytes(),
     Buffer.from([signature.recovery]),
   ]);
 
