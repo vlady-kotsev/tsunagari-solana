@@ -1,13 +1,15 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{burn, Burn, Mint, Token, TokenAccount};
 
+use crate::TokenDetails;
+
 #[derive(Accounts)]
 #[instruction(params: BurnWrappedParams)]
 pub struct BurnWrapped<'info> {
     pub payer: Signer<'info>,
     #[account(
         mut,
-        constraint = mint.key() == params.wrapped_token_address
+        constraint = mint.key() == params.wrapped_token_mint
     )]
     pub mint: Account<'info, Mint>,
     #[account(
@@ -16,13 +18,18 @@ pub struct BurnWrapped<'info> {
         constraint = from.owner == payer.key()
     )]
     pub from: Account<'info, TokenAccount>,
+    #[account(
+        seeds = [TokenDetails::SEED, params.wrapped_token_mint.as_ref()],
+        bump
+    )]
+    pub token_details: Account<'info, TokenDetails>,
     pub token_program: Program<'info, Token>,
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
 pub struct BurnWrappedParams {
     amount: u64,
-    wrapped_token_address: Pubkey,
+    wrapped_token_mint: Pubkey,
 }
 
 pub fn burn_wrapped(ctx: &Context<BurnWrapped>, params: &BurnWrappedParams) -> Result<()> {

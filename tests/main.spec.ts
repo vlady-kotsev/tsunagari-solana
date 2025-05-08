@@ -278,21 +278,61 @@ describe("bridge_solana_tests", () => {
   });
 
   test("burn", async () => {
+    const tokenDetailsPDA = pdaDeriver.tokenDetails(wrappedTokenMint);
+    const splVaultPDA = pdaDeriver.splVault();
+
     const receiverATA = await getAssociatedTokenAddress(
       wrappedTokenMint,
       authority.publicKey
     );
 
+    const splVaultAtaPDA = await getAssociatedTokenAddress(
+      wrappedTokenMint,
+      splVaultPDA,
+      true
+    );
+
+    const bridgeConfigPDA = pdaDeriver.bridgeConfig();
+
+    const privateKey1 = getPrivateKey(1);
+    const message = randomBytes(32);
+    const signature1 = await signMessage(message, privateKey1);
+
+    await bridgeProgram.methods
+      .addSupportedToken({
+        tokenMint: wrappedTokenMint,
+        symbol: "TokenA",
+        minAmount: new BN(1),
+        message: message,
+        signatures: [signature1],
+      })
+      .accounts({
+        payer: authority.publicKey,
+        tokenMint: wrappedTokenMint,
+        //@ts-ignore
+        splVault: splVaultPDA,
+        bridgeAta: splVaultAtaPDA,
+        tokenDetails: tokenDetailsPDA,
+        bridgeConfig: bridgeConfigPDA,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associcatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SYSTEM_PROGRAM_ID,
+      })
+
+      .signers([authority])
+      .rpc();
+
     await bridgeProgram.methods
       .burnWrapped({
         amount: new BN(500), // 0.5 token with 3 decimals
-        wrappedTokenAddress: wrappedTokenMint,
+        wrappedTokenMint: wrappedTokenMint,
       })
       .accounts({
         payer: authority.publicKey,
         mint: wrappedTokenMint,
         from: receiverATA,
         //@ts-ignore
+        tokenDetails: tokenDetailsPDA,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([authority])
@@ -355,5 +395,53 @@ describe("bridge_solana_tests", () => {
     expect(Number(AccountLayout.decode(vaultAtaAccount!.data).amount)).toBe(
       500
     );
+  });
+
+  test("unlock", async () => {
+    const bridgeConfigPDA = pdaDeriver.bridgeConfig();
+    const vaultPDA = pdaDeriver.splVault();
+
+    const userAta = await getAssociatedTokenAddress(
+      nativeTokenMint,
+      authority.publicKey
+    );
+
+    const vaultAtaPDA = await getAssociatedTokenAddress(
+      nativeTokenMint,
+      vaultPDA,
+      true
+    );
+
+    const privateKey1 = getPrivateKey(1);
+    const message = randomBytes(32);
+    const signature1 = await signMessage(message, privateKey1);
+
+    await bridgeProgram.methods
+      .unlock({
+        tokenMint: nativeTokenMint,
+        amount: new BN(500),
+        message,
+        signatures: [signature1],
+      })
+      .accounts({
+        payer: authority.publicKey,
+        mint: nativeTokenMint,
+        //@ts-ignore
+        splVault: vaultPDA,
+        bridgeConfig: bridgeConfigPDA,
+        from: vaultAtaPDA,
+        to: userAta,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([authority])
+      .rpc();
+
+    const userAtaAccount = await context.banksClient.getAccount(userAta);
+    expect(Number(AccountLayout.decode(userAtaAccount!.data).amount)).toBe(
+      1000
+    );
+
+    const vaultAtaAccount = await context.banksClient.getAccount(vaultAtaPDA);
+    expect(Number(AccountLayout.decode(vaultAtaAccount!.data).amount)).toBe(0);
   });
 });
