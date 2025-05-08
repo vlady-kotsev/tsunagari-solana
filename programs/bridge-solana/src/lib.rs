@@ -3,8 +3,8 @@ pub mod ecdsa_util;
 pub mod error;
 pub mod instructions;
 pub mod state;
-
 use anchor_lang::prelude::*;
+use instructions::*;
 
 pub use constants::*;
 pub use state::*;
@@ -14,6 +14,7 @@ declare_id!("NfuWnZr8HR4mxULPG61Nh7zSbdinwGtNQGVoeuxM5Jf");
 #[program]
 pub mod bridge_solana {
     use super::*;
+
     pub use instructions::*;
 
     pub fn initialize(mut ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
@@ -41,8 +42,10 @@ pub mod bridge_solana {
     ) -> Result<()> {
         instructions::remove_supported_token(&ctx, &params)
     }
-    // mintWrapped
 
+    pub fn mint_wrapped(ctx: Context<MintWrapped>, params: MintWrappedParams) -> Result<()> {
+        instructions::mint_wrapped(&ctx, &params)
+    }
     // burnWrapped
 
     // lockNative

@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 
-use crate::{ecdsa_util::verify_signatures, error::BridgeError, BridgeConfig, MAX_MEMBERS};
+use crate::{error::BridgeError, BridgeConfig, MAX_MEMBERS};
+
+use super::utils::validate_signatures;
 
 #[derive(Accounts)]
 pub struct SetMember<'info> {
@@ -23,17 +25,14 @@ pub struct SetMemberParams {
 
 pub fn set_member(ctx: &mut Context<SetMember>, params: &SetMemberParams) -> Result<()> {
     let bridge_config = &mut ctx.accounts.bridge_config;
-    // Verify signatures
-    let members = &bridge_config.members;
-    let threshold = bridge_config.threshold;
-    let message = params.message.as_slice();
-    let signatures = params
-        .signatures
-        .iter()
-        .map(|signature| signature.as_slice())
-        .collect::<Vec<&[u8]>>();
 
-    verify_signatures(members, threshold, message, signatures)?;
+    // Verify signatures
+    validate_signatures(
+        bridge_config.threshold,
+        &bridge_config.members,
+        &params.message,
+        &params.signatures,
+    )?;
 
     // add member
     if params.action {

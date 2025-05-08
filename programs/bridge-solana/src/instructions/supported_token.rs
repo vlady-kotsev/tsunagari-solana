@@ -5,8 +5,8 @@ use anchor_spl::{
 };
 
 use crate::{
-    ecdsa_util::verify_signatures, error::BridgeError, BridgeConfig, TokenDetails,
-    MAX_TOKEN_SYMBOL_LENGTH, SPL_VAULT_SEED,
+    ecdsa_util::verify_signatures, error::BridgeError, instructions::utils::validate_signatures,
+    BridgeConfig, TokenDetails, MAX_TOKEN_SYMBOL_LENGTH, SPL_VAULT_SEED,
 };
 
 #[derive(Accounts)]
@@ -65,14 +65,8 @@ pub fn add_supported_token(
     let bridge_config = &ctx.accounts.bridge_config;
     let members = &bridge_config.members;
     let threshold = bridge_config.threshold;
-    let message = params.message.as_slice();
-    let signatures = params
-        .signatures
-        .iter()
-        .map(|signature| signature.as_slice())
-        .collect::<Vec<&[u8]>>();
 
-    verify_signatures(members, threshold, message, signatures)?;
+    validate_signatures(threshold, members, &params.message, &params.signatures)?;
 
     require!(
         params.symbol.len() <= MAX_TOKEN_SYMBOL_LENGTH as usize,

@@ -23,6 +23,8 @@ import { loadKeypair, signMessage } from "./utils";
 import pdaDeriver from "./pda-deriver";
 import { getPrivateKey } from "./env";
 import {
+  ACCOUNT_SIZE,
+  AccountLayout,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
@@ -186,8 +188,6 @@ describe("bridge_solana_tests", () => {
     );
 
     const tokenDetailsPDA = pdaDeriver.tokenDetails(tokenA.publicKey);
-
-    console.log(`tokenDetailsPDA: ${tokenDetailsPDA.toBase58()}`);
     const bridgeConfigPDA = pdaDeriver.bridgeConfig();
 
     const privateKey1 = getPrivateKey(1);
@@ -223,5 +223,58 @@ describe("bridge_solana_tests", () => {
     );
 
     expect(tokenDetails.decimals).toBe(3);
+  });
+
+  test("mint", async () => {
+    const privateKey1 = getPrivateKey(1);
+    const message = randomBytes(32);
+    const signature1 = await signMessage(message, privateKey1);
+
+    const splVaultPDA = pdaDeriver.splVault();
+
+    const mint = await createMint(
+      context.banksClient,
+      authority,
+      splVaultPDA,
+      null,
+      3
+    );
+
+    const receiverATA = await createAssociatedTokenAccount(
+      context.banksClient,
+      authority,
+      mint,
+      authority.publicKey
+    );
+
+    const bridgeConfigPDA = pdaDeriver.bridgeConfig();
+
+    await bridgeProgram.methods
+      .mintWrapped({
+        amount: new BN(1000), // 1 token with 3 decimals
+        to: authority.publicKey,
+        wrappedTokenAddress: mint,
+        message,
+        signatures: [signature1],
+      })
+      .accounts({
+        payer: authority.publicKey,
+        receiver: authority.publicKey,
+        mint: mint,
+        //@ts-ignore
+        receiverAta: receiverATA,
+        splVault: splVaultPDA,
+        bridgeConfig: bridgeConfigPDA,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associcatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SYSTEM_PROGRAM_ID,
+      })
+      .signers([authority])
+      .rpc();
+
+    const ataAccount = await context.banksClient.getAccount(receiverATA);
+    expect(ataAccount).not.toBeNull();
+
+    expect(Number(AccountLayout.decode(ataAccount!.data).amount)).toBe(1000);
   });
 });
