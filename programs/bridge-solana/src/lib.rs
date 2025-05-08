@@ -51,7 +51,9 @@ pub mod bridge_solana {
         instructions::burn_wrapped(&ctx, &params)
     }
 
-    // lockNative
+    pub fn lock(ctx: Context<Lock>, params: LockParams)->Result<()>{
+        instructions::lock(&ctx, &params)
+    }
 
     //unlockNative
 }

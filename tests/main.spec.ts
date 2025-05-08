@@ -303,4 +303,57 @@ describe("bridge_solana_tests", () => {
 
     expect(Number(AccountLayout.decode(ataAccount!.data).amount)).toBe(500);
   });
+
+  test("lock", async () => {
+    const tokenDetailsPDA = pdaDeriver.tokenDetails(nativeTokenMint);
+    const vaultPDA = pdaDeriver.splVault();
+
+    const userAta = await createAssociatedTokenAccount(
+      context.banksClient,
+      authority,
+      nativeTokenMint,
+      authority.publicKey
+    );
+
+    await mintTo(
+      context.banksClient,
+      authority,
+      nativeTokenMint,
+      userAta,
+      authority,
+      1 * 10 ** 3
+    );
+
+    const vaultAtaPDA = await getAssociatedTokenAddress(
+      nativeTokenMint,
+      vaultPDA,
+      true
+    );
+
+    await bridgeProgram.methods
+      .lock({
+        tokenMint: nativeTokenMint,
+        amount: new BN(500),
+      })
+      .accounts({
+        payer: authority.publicKey,
+        //@ts-ignore
+        tokenDetails: tokenDetailsPDA,
+        mint: nativeTokenMint,
+        splVault: vaultPDA,
+        from: userAta,
+        to: vaultAtaPDA,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([authority])
+      .rpc();
+
+    const userAtaAccount = await context.banksClient.getAccount(userAta);
+    expect(Number(AccountLayout.decode(userAtaAccount!.data).amount)).toBe(500);
+
+    const vaultAtaAccount = await context.banksClient.getAccount(vaultAtaPDA);
+    expect(Number(AccountLayout.decode(vaultAtaAccount!.data).amount)).toBe(
+      500
+    );
+  });
 });
