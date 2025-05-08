@@ -34,6 +34,6 @@ pub fn set_fee(ctx: &mut Context<SetFee>, params: &SetFeeParams) -> Result<()> {
     )?;
 
     require!(params.fee <= 100, BridgeError::InvalidFee);
-    bridge_config.fee_percentage = params.fee;
+    bridge_config.fee = params.fee;
     Ok(())
 }

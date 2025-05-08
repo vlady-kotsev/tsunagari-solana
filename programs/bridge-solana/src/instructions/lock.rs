@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer};
 
-use crate::{TokenDetails, SPL_VAULT_SEED};
+use crate::{events::TokensLocked, BridgeConfig, TokenDetails, SPL_VAULT_SEED};
 
 #[derive(Accounts)]
 #[instruction(params: LockParams)]
@@ -31,6 +31,10 @@ pub struct Lock<'info> {
         constraint = to.owner == spl_vault.key()
     )]
     pub to: Account<'info, TokenAccount>,
+    #[account(
+        seeds = [BridgeConfig::SEED],
+        bump = bridge_config.bump)]
+    pub bridge_config: Account<'info, BridgeConfig>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -38,6 +42,7 @@ pub struct Lock<'info> {
 pub struct LockParams {
     pub token_mint: Pubkey,
     pub amount: u64,
+    pub destination_chain: u64,
 }
 
 pub fn lock(ctx: &Context<Lock>, params: &LockParams) -> Result<()> {
@@ -52,5 +57,15 @@ pub fn lock(ctx: &Context<Lock>, params: &LockParams) -> Result<()> {
     let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
 
     transfer(cpi_ctx, amount)?;
+
+    let fee = ctx.accounts.bridge_config.fee as u64;
+    let amout_after_fee = amount - (amount * fee) / 100;
+
+    emit!(TokensLocked {
+        amount: amout_after_fee,
+        locked_token_mint: params.token_mint,
+        destination_chain: params.destination_chain
+    });
+
     Ok(())
 }

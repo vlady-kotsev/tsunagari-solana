@@ -67,6 +67,7 @@ describe("bridge_solana_tests", () => {
       .initialize({
         threshold: 1,
         members: [ethAddressMember1, ethAddressMember2],
+        fee: 1,
       })
       .accounts({
         payer: authority.publicKey,
@@ -159,7 +160,7 @@ describe("bridge_solana_tests", () => {
       bridgeConfigPDA
     );
 
-    expect(bridgeConfig.feePercentage).toBe(5);
+    expect(bridgeConfig.fee).toBe(5);
   });
 
   test("set_member", async () => {
@@ -354,6 +355,7 @@ describe("bridge_solana_tests", () => {
       .burnWrapped({
         amount: new BN(500), // 0.5 token with 3 decimals
         wrappedTokenMint: wrappedTokenMint,
+        destinationChain: new BN(1),
       })
       .accounts({
         payer: authority.publicKey,
@@ -361,6 +363,7 @@ describe("bridge_solana_tests", () => {
         from: receiverATA,
         //@ts-ignore
         tokenDetails: tokenDetailsPDA,
+        bridgeConfig: bridgeConfigPDA,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([authority])
@@ -375,6 +378,7 @@ describe("bridge_solana_tests", () => {
   test("lock", async () => {
     const tokenDetailsPDA = pdaDeriver.tokenDetails(nativeTokenMint);
     const vaultPDA = pdaDeriver.splVault();
+    const bridgeConfigPDA = pdaDeriver.bridgeConfig();
 
     const userAta = await createAssociatedTokenAccount(
       context.banksClient,
@@ -402,6 +406,7 @@ describe("bridge_solana_tests", () => {
       .lock({
         tokenMint: nativeTokenMint,
         amount: new BN(500),
+        destinationChain: new BN(1),
       })
       .accounts({
         payer: authority.publicKey,
@@ -411,6 +416,7 @@ describe("bridge_solana_tests", () => {
         splVault: vaultPDA,
         from: userAta,
         to: vaultAtaPDA,
+        bridgeConfig: bridgeConfigPDA,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([authority])

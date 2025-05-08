@@ -1,6 +1,7 @@
 pub mod constants;
 pub mod ecdsa_util;
 pub mod error;
+pub mod events;
 pub mod instructions;
 pub mod state;
 use anchor_lang::prelude::*;

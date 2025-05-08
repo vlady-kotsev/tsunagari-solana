@@ -20,6 +20,7 @@ pub struct Initialize<'info> {
 pub struct InitializeParams {
     pub members: Vec<[u8; 20]>,
     pub threshold: u8,
+    pub fee: u8,
 }
 
 pub fn initialize(ctx: &mut Context<Initialize>, params: &InitializeParams) -> Result<()> {
@@ -33,9 +34,12 @@ pub fn initialize(ctx: &mut Context<Initialize>, params: &InitializeParams) -> R
         params.threshold > 0 && params.threshold <= params.members.len() as u8,
         BridgeError::InvalidThreshold
     );
+    require!(params.fee <= 100, BridgeError::InvalidFee);
+    bridge_config.fee = params.fee;
 
     bridge_config.bump = ctx.bumps.bridge_config;
     bridge_config.threshold = params.threshold;
+
     for member in &params.members {
         bridge_config.members.push(*member);
     }
