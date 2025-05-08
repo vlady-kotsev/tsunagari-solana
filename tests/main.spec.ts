@@ -134,6 +134,34 @@ describe("bridge_solana_tests", () => {
     expect(bridgeConfig.threshold).toBe(1);
   });
 
+  test("set_fee", async () => {
+    const bridgeConfigPDA = pdaDeriver.bridgeConfig();
+    const privateKey1 = getPrivateKey(1);
+
+    const message = randomBytes(32);
+    const signature1 = await signMessage(message, privateKey1);
+
+    await bridgeProgram.methods
+      .setFee({
+        fee: 5,
+        message: message,
+        signatures: [signature1],
+      })
+      .accounts({
+        payer: authority.publicKey,
+        //@ts-ignore
+        bridgeConfig: bridgeConfigPDA,
+      })
+      .signers([authority])
+      .rpc();
+
+    let bridgeConfig = await bridgeProgram.account.bridgeConfig.fetch(
+      bridgeConfigPDA
+    );
+
+    expect(bridgeConfig.feePercentage).toBe(5);
+  });
+
   test("set_member", async () => {
     const bridgeConfigPDA = pdaDeriver.bridgeConfig();
     const privateKey1 = getPrivateKey(1);

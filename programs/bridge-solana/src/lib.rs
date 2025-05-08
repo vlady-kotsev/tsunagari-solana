@@ -15,14 +15,16 @@ declare_id!("NfuWnZr8HR4mxULPG61Nh7zSbdinwGtNQGVoeuxM5Jf");
 pub mod bridge_solana {
     use super::*;
 
-    pub use instructions::*;
-
     pub fn initialize(mut ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
         instructions::initialize(&mut ctx, &params)
     }
 
     pub fn set_member(mut ctx: Context<SetMember>, params: SetMemberParams) -> Result<()> {
         instructions::set_member(&mut ctx, &params)
+    }
+
+    pub fn set_fee(mut ctx: Context<SetFee>, params: SetFeeParams) -> Result<()> {
+        instructions::set_fee(&mut ctx, &params)
     }
 
     pub fn set_threshold(mut ctx: Context<SetThreshold>, params: SetThresholdParams) -> Result<()> {

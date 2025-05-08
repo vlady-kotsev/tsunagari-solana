@@ -30,4 +30,6 @@ pub enum BridgeError {
     NotUniqueSignatures,
     #[msg("Invalid token symbol length")]
     InvalidTokenSymbolLength,
+    #[msg("Invalid fee percentage")]
+    InvalidFee,
 }
