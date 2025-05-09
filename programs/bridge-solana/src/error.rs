@@ -32,4 +32,8 @@ pub enum BridgeError {
     InvalidTokenSymbolLength,
     #[msg("Invalid fee percentage")]
     InvalidFee,
+    #[msg("Invalid signature accounts")]
+    InvalidSignatureAccounts,
+    #[msg("Signature already used")]
+    SignatureAlreadyUsed,
 }

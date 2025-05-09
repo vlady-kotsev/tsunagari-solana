@@ -3,7 +3,7 @@ use anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer};
 
 use crate::{BridgeConfig, SPL_VAULT_SEED};
 
-use super::utils::validate_signatures;
+use super::utils::{mark_used_signatures, validate_signature_accounts, validate_signatures};
 
 #[derive(Accounts)]
 #[instruction(params: UnlockParams)]
@@ -35,6 +35,7 @@ pub struct Unlock<'info> {
     )]
     pub to: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
@@ -45,12 +46,30 @@ pub struct UnlockParams {
     pub signatures: Vec<Vec<u8>>,
 }
 
-pub fn unlock(ctx: &Context<Unlock>, params: &UnlockParams) -> Result<()> {
+pub fn unlock<'info>(ctx: &Context<'_,'_,'_,'info,Unlock<'info>>, params: &UnlockParams) -> Result<()> {
     let bridge_config = &ctx.accounts.bridge_config;
     let threshold = bridge_config.threshold;
     let members = &bridge_config.members;
 
     validate_signatures(threshold, members, &params.message, &params.signatures)?;
+
+    let signature_accounts = ctx.remaining_accounts.to_vec();
+
+    let signature_accounts_bumps = validate_signature_accounts(
+        &signature_accounts,
+        &params.signatures,
+        ctx.program_id,
+        ctx.accounts.system_program.key,
+    )?;
+
+    mark_used_signatures(
+        &params.signatures,
+        &ctx.accounts.payer,
+        ctx.program_id,
+        &ctx.accounts.system_program,
+        signature_accounts,
+        signature_accounts_bumps,
+    )?;
 
     let cpi_accounts = Transfer {
         from: ctx.accounts.from.to_account_info(),

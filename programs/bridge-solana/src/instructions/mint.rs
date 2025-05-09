@@ -6,6 +6,8 @@ use anchor_spl::{
 
 use crate::{error::BridgeError, BridgeConfig, SPL_VAULT_SEED};
 
+use super::utils::{mark_used_signatures, validate_signature_accounts, validate_signatures};
+
 #[derive(Accounts)]
 #[instruction(params: MintWrappedParams)]
 pub struct MintWrapped<'info> {
@@ -49,7 +51,29 @@ pub struct MintWrappedParams {
     signatures: Vec<Vec<u8>>,
 }
 
-pub fn mint_wrapped(ctx: &Context<MintWrapped>, params: &MintWrappedParams) -> Result<()> {
+pub fn mint_wrapped<'info>(ctx: &Context<'_,'_,'_,'info,MintWrapped<'info>>, params: &MintWrappedParams) -> Result<()> {
+    let threshold = ctx.accounts.bridge_config.threshold;
+    let members = &ctx.accounts.bridge_config.members;
+
+    validate_signatures(threshold, members, &params.message, &params.signatures)?;
+
+    let signature_accounts = ctx.remaining_accounts.to_vec();
+    let signature_accounts_bumps = validate_signature_accounts(
+        &signature_accounts,
+        &params.signatures,
+        ctx.program_id,
+        ctx.accounts.system_program.key,
+    )?;
+
+    mark_used_signatures(
+        &params.signatures,
+        &ctx.accounts.payer,
+        ctx.program_id,
+        &ctx.accounts.system_program,
+        signature_accounts,
+        signature_accounts_bumps,
+    )?;
+    
     let amount = params.amount;
     let cpi_accounts = MintTo {
         mint: ctx.accounts.mint.to_account_info(),

@@ -9,6 +9,8 @@ use crate::{
     BridgeConfig, TokenDetails, MAX_TOKEN_SYMBOL_LENGTH, SPL_VAULT_SEED,
 };
 
+use super::utils::{mark_used_signatures, validate_signature_accounts};
+
 #[derive(Accounts)]
 #[instruction(params: AddSupportedTokenParams)]
 pub struct AddSupportedToken<'info> {
@@ -58,8 +60,8 @@ pub struct AddSupportedTokenParams {
     pub signatures: Vec<Vec<u8>>,
 }
 
-pub fn add_supported_token(
-    ctx: &mut Context<AddSupportedToken>,
+pub fn add_supported_token<'info>(
+    ctx: &mut Context<'_, '_, '_, 'info, AddSupportedToken<'info>>,
     params: &AddSupportedTokenParams,
 ) -> Result<()> {
     let bridge_config = &ctx.accounts.bridge_config;
@@ -67,6 +69,23 @@ pub fn add_supported_token(
     let threshold = bridge_config.threshold;
 
     validate_signatures(threshold, members, &params.message, &params.signatures)?;
+
+    let signature_accounts = ctx.remaining_accounts.to_vec();
+    let signature_accounts_bumps = validate_signature_accounts(
+        &signature_accounts,
+        &params.signatures,
+        ctx.program_id,
+        ctx.accounts.system_program.key,
+    )?;
+
+    mark_used_signatures(
+        &params.signatures,
+        &ctx.accounts.payer,
+        ctx.program_id,
+        &ctx.accounts.system_program,
+        signature_accounts,
+        signature_accounts_bumps,
+    )?;
 
     require!(
         params.symbol.len() <= MAX_TOKEN_SYMBOL_LENGTH as usize,
@@ -115,8 +134,8 @@ pub struct RemoveSupportedTokenParams {
     pub signatures: Vec<Vec<u8>>,
 }
 
-pub fn remove_supported_token(
-    ctx: &Context<RemoveSupportedToken>,
+pub fn remove_supported_token<'info>(
+    ctx: &Context<'_, '_, '_, 'info, RemoveSupportedToken<'info>>,
     params: &RemoveSupportedTokenParams,
 ) -> Result<()> {
     let bridge_config = &ctx.accounts.bridge_config;
@@ -128,8 +147,25 @@ pub fn remove_supported_token(
         .iter()
         .map(|signature| signature.as_slice())
         .collect::<Vec<&[u8]>>();
+    let signature_accounts = ctx.remaining_accounts.to_vec();
 
-    verify_signatures(members, threshold, message, signatures)?;
+    verify_signatures(members, threshold, message, &signatures)?;
+
+    let signature_accounts_bumps = validate_signature_accounts(
+        &signature_accounts,
+        &params.signatures,
+        ctx.program_id,
+        ctx.accounts.system_program.key,
+    )?;
+
+    mark_used_signatures(
+        &params.signatures,
+        &ctx.accounts.payer,
+        ctx.program_id,
+        &ctx.accounts.system_program,
+        signature_accounts,
+        signature_accounts_bumps,
+    )?;
 
     Ok(())
 }

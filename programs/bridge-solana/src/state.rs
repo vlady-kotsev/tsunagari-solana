@@ -32,3 +32,12 @@ impl TokenDetails {
     pub const SEED: &'static [u8; 10] = b"TokDetails";
     pub const SIZE: usize = TokenDetails::INIT_SPACE + 8;
 }
+
+#[account]
+#[derive(InitSpace)]
+pub struct UsedSignature {}
+
+impl UsedSignature {
+    pub const SEED: &'static [u8; 4] = b"sign";
+    pub const SIZE: usize = UsedSignature::INIT_SPACE + 8;
+}

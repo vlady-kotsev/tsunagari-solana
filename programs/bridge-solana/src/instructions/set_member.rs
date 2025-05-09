@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{error::BridgeError, BridgeConfig, MAX_MEMBERS};
 
-use super::utils::validate_signatures;
+use super::utils::{mark_used_signatures, validate_signature_accounts, validate_signatures};
 
 #[derive(Accounts)]
 pub struct SetMember<'info> {
@@ -13,6 +13,7 @@ pub struct SetMember<'info> {
         bump = bridge_config.bump)
     ]
     pub bridge_config: Account<'info, BridgeConfig>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
@@ -23,7 +24,10 @@ pub struct SetMemberParams {
     pub signatures: Vec<Vec<u8>>,
 }
 
-pub fn set_member(ctx: &mut Context<SetMember>, params: &SetMemberParams) -> Result<()> {
+pub fn set_member<'info>(
+    ctx: &mut Context<'_, '_, '_, 'info, SetMember<'info>>,
+    params: &SetMemberParams,
+) -> Result<()> {
     let bridge_config = &mut ctx.accounts.bridge_config;
 
     // Verify signatures
@@ -32,6 +36,24 @@ pub fn set_member(ctx: &mut Context<SetMember>, params: &SetMemberParams) -> Res
         &bridge_config.members,
         &params.message,
         &params.signatures,
+    )?;
+
+    let signature_accounts = ctx.remaining_accounts.to_vec();
+
+    let signature_accounts_bumps = validate_signature_accounts(
+        &signature_accounts,
+        &params.signatures,
+        ctx.program_id,
+        ctx.accounts.system_program.key,
+    )?;
+
+    mark_used_signatures(
+        &params.signatures,
+        &ctx.accounts.payer,
+        ctx.program_id,
+        &ctx.accounts.system_program,
+        signature_accounts,
+        signature_accounts_bumps,
     )?;
 
     // add member

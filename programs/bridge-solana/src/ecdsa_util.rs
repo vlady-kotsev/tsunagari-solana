@@ -56,7 +56,7 @@ pub fn verify_signatures(
     members_keyes: &Vec<[u8; 20]>,
     threshold: u8,
     message: &[u8],
-    signatures: Vec<&[u8]>,
+    signatures: &Vec<&[u8]>,
 ) -> Result<()> {
     // check if signatures meet the threshold
     validate_against_threshold(threshold, &signatures)?;

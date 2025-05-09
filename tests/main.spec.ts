@@ -23,7 +23,6 @@ import { loadKeypair, signMessage } from "./utils";
 import pdaDeriver from "./pda-deriver";
 import { getPrivateKey } from "./env";
 import {
-  ACCOUNT_SIZE,
   AccountLayout,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
@@ -90,9 +89,12 @@ describe("bridge_solana_tests", () => {
     const privateKey1 = getPrivateKey(1);
     const privateKey2 = getPrivateKey(2);
 
-    const message = randomBytes(32);
-    const signature1 = await signMessage(message, privateKey1);
-    const signature2 = await signMessage(message, privateKey2);
+    let message = randomBytes(32);
+    let signature1 = await signMessage(message, privateKey1);
+    let signature2 = await signMessage(message, privateKey2);
+
+    let usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
+    let usedSignaturePDA2 = pdaDeriver.usedSignature(signature2);
 
     await bridgeProgram.methods
       .setThreshold({
@@ -104,7 +106,20 @@ describe("bridge_solana_tests", () => {
         payer: authority.publicKey,
         //@ts-ignore
         bridgeConfig: bridgeConfigPDA,
+        systemProgram: SYSTEM_PROGRAM_ID,
       })
+      .remainingAccounts([
+        {
+          pubkey: usedSignaturePDA1,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: usedSignaturePDA2,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
       .signers([authority])
       .rpc();
 
@@ -113,6 +128,13 @@ describe("bridge_solana_tests", () => {
     );
 
     expect(bridgeConfig.threshold).toBe(2);
+
+    message = randomBytes(32);
+    signature1 = await signMessage(message, privateKey1);
+    signature2 = await signMessage(message, privateKey2);
+
+    usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
+    usedSignaturePDA2 = pdaDeriver.usedSignature(signature2);
 
     await bridgeProgram.methods
       .setThreshold({
@@ -124,7 +146,20 @@ describe("bridge_solana_tests", () => {
         payer: authority.publicKey,
         //@ts-ignore
         bridgeConfig: bridgeConfigPDA,
+        systemProgram: SYSTEM_PROGRAM_ID,
       })
+      .remainingAccounts([
+        {
+          pubkey: usedSignaturePDA1,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: usedSignaturePDA2,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
       .signers([authority])
       .rpc();
 
@@ -142,6 +177,8 @@ describe("bridge_solana_tests", () => {
     const message = randomBytes(32);
     const signature1 = await signMessage(message, privateKey1);
 
+    const usedSignaturePDA = pdaDeriver.usedSignature(signature1);
+
     await bridgeProgram.methods
       .setFee({
         fee: 5,
@@ -152,7 +189,15 @@ describe("bridge_solana_tests", () => {
         payer: authority.publicKey,
         //@ts-ignore
         bridgeConfig: bridgeConfigPDA,
+        systemProgram: SYSTEM_PROGRAM_ID,
       })
+      .remainingAccounts([
+        {
+          pubkey: usedSignaturePDA,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
       .signers([authority])
       .rpc();
 
@@ -176,6 +221,9 @@ describe("bridge_solana_tests", () => {
       hexStringMember2.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
     );
 
+    const usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
+    const usedSignaturePDA2 = pdaDeriver.usedSignature(signature2);
+
     await bridgeProgram.methods
       .setMember({
         memberKey: Array.from(bytesMember2),
@@ -187,7 +235,20 @@ describe("bridge_solana_tests", () => {
         payer: authority.publicKey,
         //@ts-ignore
         bridgeConfig: bridgeConfigPDA,
+        systemProgram: SYSTEM_PROGRAM_ID,
       })
+      .remainingAccounts([
+        {
+          pubkey: usedSignaturePDA1,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: usedSignaturePDA2,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
       .signers([authority])
       .rpc();
 
@@ -222,6 +283,8 @@ describe("bridge_solana_tests", () => {
     const message = randomBytes(32);
     const signature1 = await signMessage(message, privateKey1);
 
+    const usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
+
     await bridgeProgram.methods
       .addSupportedToken({
         tokenMint: nativeTokenMint,
@@ -242,7 +305,13 @@ describe("bridge_solana_tests", () => {
         associcatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
       })
-
+      .remainingAccounts([
+        {
+          isSigner: false,
+          isWritable: true,
+          pubkey: usedSignaturePDA1,
+        },
+      ])
       .signers([authority])
       .rpc();
 
@@ -257,6 +326,7 @@ describe("bridge_solana_tests", () => {
     const privateKey1 = getPrivateKey(1);
     const message = randomBytes(32);
     const signature1 = await signMessage(message, privateKey1);
+    const usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
 
     const splVaultPDA = pdaDeriver.splVault();
 
@@ -297,6 +367,13 @@ describe("bridge_solana_tests", () => {
         associcatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
       })
+      .remainingAccounts([
+        {
+          pubkey: usedSignaturePDA1,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
       .signers([authority])
       .rpc();
 
@@ -327,6 +404,8 @@ describe("bridge_solana_tests", () => {
     const message = randomBytes(32);
     const signature1 = await signMessage(message, privateKey1);
 
+    const usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
+
     await bridgeProgram.methods
       .addSupportedToken({
         tokenMint: wrappedTokenMint,
@@ -347,7 +426,13 @@ describe("bridge_solana_tests", () => {
         associcatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
       })
-
+      .remainingAccounts([
+        {
+          pubkey: usedSignaturePDA1,
+          isWritable: true,
+          isSigner: false,
+        },
+      ])
       .signers([authority])
       .rpc();
 
@@ -449,6 +534,7 @@ describe("bridge_solana_tests", () => {
     const privateKey1 = getPrivateKey(1);
     const message = randomBytes(32);
     const signature1 = await signMessage(message, privateKey1);
+    const usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
 
     await bridgeProgram.methods
       .unlock({
@@ -466,7 +552,15 @@ describe("bridge_solana_tests", () => {
         from: vaultAtaPDA,
         to: userAta,
         tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SYSTEM_PROGRAM_ID,
       })
+      .remainingAccounts([
+        {
+          pubkey: usedSignaturePDA1,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
       .signers([authority])
       .rpc();
 
