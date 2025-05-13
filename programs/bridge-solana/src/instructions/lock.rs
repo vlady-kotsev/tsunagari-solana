@@ -42,7 +42,8 @@ pub struct Lock<'info> {
 pub struct LockParams {
     pub token_mint: Pubkey,
     pub amount: u64,
-    pub destination_chain: u64,
+    pub destination_chain: u32,
+    pub destination_address: String,
 }
 
 pub fn lock(ctx: &Context<Lock>, params: &LockParams) -> Result<()> {
@@ -64,7 +65,8 @@ pub fn lock(ctx: &Context<Lock>, params: &LockParams) -> Result<()> {
     emit!(TokensLocked {
         amount: amout_after_fee,
         locked_token_mint: params.token_mint,
-        destination_chain: params.destination_chain
+        destination_chain: params.destination_chain,
+        destination_address: params.destination_address.clone()
     });
 
     Ok(())

@@ -31,7 +31,6 @@ pub struct Unlock<'info> {
     pub from: Account<'info, TokenAccount>,
     #[account(mut,
         constraint = to.mint == mint.key(),
-        constraint = to.owner == payer.key()
     )]
     pub to: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,

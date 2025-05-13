@@ -491,7 +491,8 @@ describe("bridge_solana_tests", () => {
       .lock({
         tokenMint: nativeTokenMint,
         amount: new BN(500),
-        destinationChain: new BN(1),
+        destinationChain: 1,
+        destinationAddress: `0x${hexStringMember1}`,
       })
       .accounts({
         payer: authority.publicKey,

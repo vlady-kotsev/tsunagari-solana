@@ -1,3 +1,0 @@
-[dependencies]
-anchor-lang = { version = "0.31.1" }
-anchor-spl = { version = "0.31.1", features = ["associated_token", "token"] }
