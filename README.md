@@ -1,4 +1,9 @@
-# Tsunagari Bridge Solana
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/8e4e3361-4930-45ef-addc-a0b576e8c56f" alt="logo" />
+  <h1>Tsunagari/つながり - Solana program</h1>
+  
+</div>
+
 
 ## Table of Contents
 
