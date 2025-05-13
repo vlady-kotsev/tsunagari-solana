@@ -14,9 +14,9 @@ import {
   //@ts-ignore
 } from "spl-token-bankrun";
 import { BN, Program, Wallet } from "@coral-xyz/anchor";
-import { BridgeSolana } from "../target/types/bridge_solana";
+import { BridgeSolana } from "./target/types/bridge_solana";
 import { randomBytes } from "crypto";
-import BRIDGE_IDL from "../target/idl/bridge_solana.json";
+import BRIDGE_IDL from "./target/idl/bridge_solana.json";
 import { contextPromise } from "./context";
 
 import { ProgramTestContext } from "solana-bankrun";
@@ -442,7 +442,7 @@ describe("bridge_solana_tests", () => {
         amount: new BN(500), // 0.5 token with 3 decimals
         wrappedTokenMint: wrappedTokenMint,
         destinationChain: new BN(1),
-        destinationAddress: ""
+        destinationAddress: "",
       })
       .accounts({
         payer: authority.publicKey,

@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)]
 use anchor_lang::prelude::*;
 
 use crate::{error::BridgeError, BridgeConfig};
@@ -29,7 +30,7 @@ pub fn initialize(ctx: &mut Context<Initialize>, params: &InitializeParams) -> R
         !bridge_config.is_initialized,
         BridgeError::AlreadyInitialized
     );
-    require!(params.members.len() > 0, BridgeError::InvalidMembersCount);
+    require!(!params.members.is_empty(), BridgeError::InvalidMembersCount);
     require!(
         params.threshold > 0 && params.threshold <= params.members.len() as u8,
         BridgeError::InvalidThreshold

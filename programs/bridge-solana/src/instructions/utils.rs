@@ -7,9 +7,9 @@ use crate::{ecdsa_util::verify_signatures, error::BridgeError, UsedSignature};
 
 pub fn validate_signatures(
     threshold: u8,
-    members: &Vec<[u8; 20]>,
+    members: &[[u8; 20]],
     message: &Vec<u8>,
-    signatures: &Vec<Vec<u8>>,
+    signatures: &[Vec<u8>],
 ) -> Result<()> {
     let message = message.as_slice();
     let signatures = signatures
@@ -38,7 +38,7 @@ fn check_signagture_used(
 
 pub fn validate_signature_accounts(
     signature_accounts: &Vec<AccountInfo>,
-    signatures: &Vec<Vec<u8>>,
+    signatures: &[Vec<u8>],
     program_id: &Pubkey,
     system_program_id: &Pubkey,
 ) -> Result<Vec<u8>> {
@@ -63,12 +63,12 @@ pub fn validate_signature_accounts(
         signature_accounts_bumps.push(bump);
     }
 
-    check_signagture_used(&signature_accounts, system_program_id)?;
+    check_signagture_used(signature_accounts, system_program_id)?;
     Ok(signature_accounts_bumps)
 }
 
 pub fn mark_used_signatures<'info>(
-    signatures: &Vec<Vec<u8>>,
+    signatures: &[Vec<u8>],
     payer: &Signer<'info>,
     program_id: &Pubkey,
     system_program: &Program<'info, System>,
@@ -76,7 +76,7 @@ pub fn mark_used_signatures<'info>(
     used_signature_bumps: Vec<u8>,
 ) -> Result<()> {
     for (index, signature) in signatures.iter().enumerate() {
-        let signature_hash = hash(&signature);
+        let signature_hash = hash(signature);
         let (pda, _) = Pubkey::find_program_address(
             &[UsedSignature::SEED, &signature_hash.to_bytes()],
             program_id,

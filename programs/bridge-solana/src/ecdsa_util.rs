@@ -8,7 +8,7 @@ use anchor_lang::{
 use crate::error::BridgeError;
 
 fn validate_signature(
-    members_keyes: &Vec<[u8; 20]>,
+    members_keyes: &[[u8; 20]],
     message: &[u8],
     signature_bytes: &[u8],
 ) -> Result<()> {
@@ -33,7 +33,7 @@ fn validate_signature(
     Ok(())
 }
 
-fn validate_against_threshold(threshold: u8, signatures: &Vec<&[u8]>) -> Result<()> {
+fn validate_against_threshold(threshold: u8, signatures: &[&[u8]]) -> Result<()> {
     require!(
         signatures.len() >= threshold as usize,
         BridgeError::NotEnoughSignatures
@@ -53,16 +53,16 @@ fn validate_against_duplicates(signatures: &Vec<&[u8]>) -> Result<()> {
     Ok(())
 }
 pub fn verify_signatures(
-    members_keyes: &Vec<[u8; 20]>,
+    members_keyes: &[[u8; 20]],
     threshold: u8,
     message: &[u8],
     signatures: &Vec<&[u8]>,
 ) -> Result<()> {
     // check if signatures meet the threshold
-    validate_against_threshold(threshold, &signatures)?;
+    validate_against_threshold(threshold, signatures)?;
 
     // check if signatures are unique
-    validate_against_duplicates(&signatures)?;
+    validate_against_duplicates(signatures)?;
 
     // check if signatures are correct
     for signature in signatures {

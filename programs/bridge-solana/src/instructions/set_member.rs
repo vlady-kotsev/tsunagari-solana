@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)]
 use anchor_lang::prelude::*;
 
 use crate::{error::BridgeError, BridgeConfig, MAX_MEMBERS};
@@ -75,7 +76,7 @@ pub fn set_member<'info>(
     } else {
         // remove member
         require!(
-            bridge_config.members.len() as u8 - 1 >= bridge_config.threshold,
+            bridge_config.members.len() as u8 > bridge_config.threshold,
             BridgeError::BelowThreshold
         );
 
