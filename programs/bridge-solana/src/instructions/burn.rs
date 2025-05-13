@@ -35,6 +35,7 @@ pub struct BurnWrappedParams {
     pub amount: u64,
     pub wrapped_token_mint: Pubkey,
     pub destination_chain: u64,
+    pub destination_address: String,
 }
 
 pub fn burn_wrapped(ctx: &Context<BurnWrapped>, params: &BurnWrappedParams) -> Result<()> {
@@ -55,7 +56,8 @@ pub fn burn_wrapped(ctx: &Context<BurnWrapped>, params: &BurnWrappedParams) -> R
     emit!(TokensBurned {
         amount: amout_after_fee,
         burned_token_mint: params.wrapped_token_mint,
-        destination_chain: params.destination_chain
+        destination_chain: params.destination_chain,
+        destination_address: params.destination_address.clone()
     });
 
     Ok(())

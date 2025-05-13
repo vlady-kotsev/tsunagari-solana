@@ -4,6 +4,7 @@ import {
   Keypair,
   SystemProgram,
   PublicKey,
+  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import {
   createMint,
@@ -441,6 +442,7 @@ describe("bridge_solana_tests", () => {
         amount: new BN(500), // 0.5 token with 3 decimals
         wrappedTokenMint: wrappedTokenMint,
         destinationChain: new BN(1),
+        destinationAddress: ""
       })
       .accounts({
         payer: authority.publicKey,
@@ -572,5 +574,46 @@ describe("bridge_solana_tests", () => {
 
     const vaultAtaAccount = await context.banksClient.getAccount(vaultAtaPDA);
     expect(Number(AccountLayout.decode(vaultAtaAccount!.data).amount)).toBe(0);
+  });
+
+  test("create_wrapped", async () => {
+    const splVaultPDA = pdaDeriver.splVault();
+
+    const mint = Keypair.generate();
+    const mintPDA = mint.publicKey;
+
+    const bridgeConfigPDA = pdaDeriver.bridgeConfig();
+
+    const privateKey1 = getPrivateKey(1);
+    const message = randomBytes(32);
+    const signature1 = await signMessage(message, privateKey1);
+
+    const usedSignaturePDA1 = pdaDeriver.usedSignature(signature1);
+
+    await bridgeProgram.methods
+      .createWrapped({
+        decimals: 3,
+        message: message,
+        signatures: [signature1],
+      })
+      .accounts({
+        payer: authority.publicKey,
+        //@ts-ignore
+        bridgeConfig: bridgeConfigPDA,
+        splVault: splVaultPDA,
+        mint: mintPDA,
+        rent: SYSVAR_RENT_PUBKEY,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SYSTEM_PROGRAM_ID,
+      })
+      .remainingAccounts([
+        {
+          isSigner: false,
+          isWritable: true,
+          pubkey: usedSignaturePDA1,
+        },
+      ])
+      .signers([authority, mint])
+      .rpc();
   });
 });
